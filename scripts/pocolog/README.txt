@@ -1,4 +1,4 @@
-This directory contains the Roby controller files.
+This directory contains the Roby pocolog files.
 
 This is useful only if you decide to use rock-roby, Rock's system management
 layer
