@@ -55,69 +55,71 @@ if __name__ == '__main__':
     streams = multi_file_index.get_all_streams()
 
     #print(colors['green']+"[*] Images: "+colors['reset'], end="\n")
-    stream = streams[port_image]
-    idx, prev_ts = 0, None
-    pbar = tqdm.tqdm(total=stream.get_size())
-    for t in range(stream.get_size()):
-        value = stream.get_sample(t)
-        py_value = value.cast(recursive=True)
-        value.destroy()
-        ts = base.Time.from_microseconds(py_value['time']['microseconds'])
-        height, width, channels = py_value['size']['height'], py_value['size']['width'], py_value['pixel_size']
-        depth = py_value['data_depth']
-        img = np.array(py_value['image'], dtype=np.uint8)
-        img = img.reshape(height, width, channels)
-        if args.flip_y: img = np.flip(img, axis=1)
-        delta_t = ts.to_seconds() - prev_ts.to_seconds() if prev_ts is not None else 0
-        #print("t: {} [{:.3f}] height {} width {} image {}".format(ts.to_seconds(), delta_t, height, width, img.size))
-        try:
-            stamp_ros = rospy.Time(nsecs=int(ts.to_microseconds()*1e03))
-            rosimage = Image()
-            rosimage.header.seq = t
-            rosimage.header.stamp = stamp_ros
-            rosimage.height = height
-            rosimage.width = width
-            rosimage.step = width * depth * channels
-            rosimage.encoding = "rgb8"
-            rosimage.data = img.tobytes()
-            outbag.write(topic_image, rosimage, stamp_ros)
-        except:
-            print("error in writing images into rosbag ", output_file)
-        #input('Press ENTER to continue...')
-        prev_ts = ts
-        idx = idx + 1
-        pbar.update(1)
+    if port_image is not '' and topic_image is not '':
+        stream = streams[port_image]
+        idx, prev_ts = 0, None
+        pbar = tqdm.tqdm(total=stream.get_size())
+        for t in range(stream.get_size()):
+            value = stream.get_sample(t)
+            py_value = value.cast(recursive=True)
+            value.destroy()
+            ts = base.Time.from_microseconds(py_value['time']['microseconds'])
+            height, width, channels = py_value['size']['height'], py_value['size']['width'], py_value['pixel_size']
+            depth = py_value['data_depth']
+            img = np.array(py_value['image'], dtype=np.uint8)
+            img = img.reshape(height, width, channels)
+            if args.flip_y: img = np.flip(img, axis=1)
+            delta_t = ts.to_seconds() - prev_ts.to_seconds() if prev_ts is not None else 0
+            #print("t: {} [{:.3f}] height {} width {} image {}".format(ts.to_seconds(), delta_t, height, width, img.size))
+            try:
+                stamp_ros = rospy.Time(nsecs=int(ts.to_microseconds()*1e03))
+                rosimage = Image()
+                rosimage.header.seq = t
+                rosimage.header.stamp = stamp_ros
+                rosimage.height = height
+                rosimage.width = width
+                rosimage.step = width * depth * channels
+                rosimage.encoding = "rgb8"
+                rosimage.data = img.tobytes()
+                outbag.write(topic_image, rosimage, stamp_ros)
+            except:
+                print("error in writing images into rosbag ", output_file)
+            #input('Press ENTER to continue...')
+            prev_ts = ts
+            idx = idx + 1
+            pbar.update(1)
 
     #print(colors['green']+"[*] Poses: "+colors['reset'], end="\n")
-    stream = streams[port_pose]
-    idx, prev_ts = 0, None
-    pbar = tqdm.tqdm(total=stream.get_size())
-    for t in range(stream.get_size()):
-        value = stream.get_sample(t)
-        py_value = value.cast(recursive=True)
-        value.destroy()
-        ts = base.Time.from_microseconds(py_value['time']['microseconds'])
-        delta_t = ts.to_seconds() - prev_ts.to_seconds() if prev_ts is not None else 0
-        try:
-            stamp_ros = rospy.Time(nsecs=int(ts.to_microseconds()*1e03))
-            rospose = PoseStamped()
-            rospose.header.seq = t
-            rospose.header.stamp = stamp_ros
-            rospose.header.frame_id = py_value['targetFrame']
-            rospose.pose.position.x = py_value['position']['data'][0]
-            rospose.pose.position.y = py_value['position']['data'][1]
-            rospose.pose.position.z = py_value['position']['data'][2]
-            rospose.pose.orientation.x = py_value['orientation']['im'][0]
-            rospose.pose.orientation.y = py_value['orientation']['im'][1]
-            rospose.pose.orientation.z = py_value['orientation']['im'][2]
-            rospose.pose.orientation.w = py_value['orientation']['re']
-            outbag.write(topic_pose, rospose, stamp_ros)
-        except:
-            print("error in writing poses into rosbag ", output_file)
-        #input('Press ENTER to continue...')
-        prev_ts = ts
-        idx = idx + 1
-        pbar.update(1)
+    if port_pose is not '' and topic_pose is not '':
+        stream = streams[port_pose]
+        idx, prev_ts = 0, None
+        pbar = tqdm.tqdm(total=stream.get_size())
+        for t in range(stream.get_size()):
+            value = stream.get_sample(t)
+            py_value = value.cast(recursive=True)
+            value.destroy()
+            ts = base.Time.from_microseconds(py_value['time']['microseconds'])
+            delta_t = ts.to_seconds() - prev_ts.to_seconds() if prev_ts is not None else 0
+            try:
+                stamp_ros = rospy.Time(nsecs=int(ts.to_microseconds()*1e03))
+                rospose = PoseStamped()
+                rospose.header.seq = t
+                rospose.header.stamp = stamp_ros
+                rospose.header.frame_id = py_value['targetFrame']
+                rospose.pose.position.x = py_value['position']['data'][0]
+                rospose.pose.position.y = py_value['position']['data'][1]
+                rospose.pose.position.z = py_value['position']['data'][2]
+                rospose.pose.orientation.x = py_value['orientation']['im'][0]
+                rospose.pose.orientation.y = py_value['orientation']['im'][1]
+                rospose.pose.orientation.z = py_value['orientation']['im'][2]
+                rospose.pose.orientation.w = py_value['orientation']['re']
+                outbag.write(topic_pose, rospose, stamp_ros)
+            except:
+                print("error in writing poses into rosbag ", output_file)
+            #input('Press ENTER to continue...')
+            prev_ts = ts
+            idx = idx + 1
+            pbar.update(1)
 
     if port_events is not '' and topic_events is not '':
         from dvs_msgs.msg import Event, EventArray
